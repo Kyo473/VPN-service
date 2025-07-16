@@ -12,7 +12,7 @@ import asyncio
 from app.config import BOT_TOKEN, API_SECRET_TOKEN, API_URL, ADMIN_IDS
 
 # Создание объектов
-bot = Bot(token=BOT_TOKEN, default=types.DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
