@@ -6,7 +6,9 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY . .
 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN chmod +x run.sh
+ENV PYTHONPATH=/app
 
-CMD ["./run.sh"]
+RUN pip install --no-cache-dir -r requirements.txt
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]
