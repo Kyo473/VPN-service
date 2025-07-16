@@ -1,2 +1,6 @@
 app/config.py
 app/vpn_bot.session
+.vscode
+.idea
+**/__pycache__/*
+venv
