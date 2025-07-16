@@ -1,6 +1,7 @@
 import json
 import subprocess
-from config import *
+from app.config import *
+
 
 def run_cmd(cmd):
     return subprocess.check_output(cmd, shell=True).decode().strip()
