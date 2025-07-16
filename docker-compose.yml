@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  vpnbot:
+    build: .
+    container_name: vpnbot
+    volumes:
+      - /usr/local/etc/xray:/usr/local/etc/xray  # доступ к конфигам
+    restart: unless-stopped
+    networks:
+      - internal
+
+  api:
+    build: .
+    container_name: vpn-api
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    volumes:
+      - /usr/local/etc/xray:/usr/local/etc/xray
+    restart: unless-stopped
+    expose:
+      - 8000  # доступно только внутри docker-сети
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

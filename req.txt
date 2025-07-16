@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+requests
+qrcode[pil]
+pyrogram
+tgcrypto
