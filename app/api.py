@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
-from app.config import API_SECRET_TOKEN , add_user
+from app.config import API_SECRET_TOKEN
+from app.xray_control import add_user
 
 app = FastAPI()
 

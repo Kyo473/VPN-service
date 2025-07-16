@@ -11,7 +11,7 @@ import asyncio
 import os
 from app.config import BOT_TOKEN, API_SECRET_TOKEN, API_URL, ADMIN_IDS
 
-bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
 class Form(StatesGroup):
