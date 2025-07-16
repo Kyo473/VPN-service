@@ -1,63 +1,91 @@
+import uuid
 import json
-import subprocess
-from app.config import *
+import os
+import requests
+from app.config import CONFIG_PATH,KEYS_PATH
 
-
-def run_cmd(cmd):
-    return subprocess.check_output(cmd, shell=True).decode().strip()
-
-def read_json(path):
-    with open(path) as f:
+def load_config():
+    with open(CONFIG_PATH, "r") as f:
         return json.load(f)
 
-def write_json(path, data):
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
 
-def get_server_ip():
-    return XRAY_DOMAIN or run_cmd("curl -s -4 icanhazip.com")
+def save_config(config):
+    with open(CONFIG_PATH, "w") as f:
+        json.dump(config, f, indent=2)
+
+
+def get_ip():
+    return requests.get("https://icanhazip.com").text.strip()
+
 
 def get_keys():
-    with open(XRAY_KEYS_PATH) as f:
-        lines = f.readlines()
-        pbk = next(l.split(": ")[1].strip() for l in lines if "Public key" in l)
-        sid = next(l.split(": ")[1].strip() for l in lines if "shortsid" in l)
+    pbk, sid = None, None
+    with open(KEYS_PATH, "r") as f:
+        for line in f:
+            if "Public key" in line:
+                pbk = line.strip().split(": ")[1]
+            if "shortsid" in line:
+                sid = line.strip().split(": ")[1]
     return pbk, sid
 
+
 def user_exists(email):
-    data = read_json(XRAY_CONFIG_PATH)
-    return any(c["email"] == email for c in data["inbounds"][0]["settings"]["clients"])
+    config = load_config()
+    return any(c["email"] == email for c in config["inbounds"][0]["settings"]["clients"])
 
-def add_user(email):
+
+def add_user(email: str) -> str:
     if user_exists(email):
-        return None  # Уже есть
+        raise ValueError("User already exists")
 
-    uuid = run_cmd("xray uuid")
-    data = read_json(XRAY_CONFIG_PATH)
+    config = load_config()
+    new_uuid = str(uuid.uuid4())
 
-    new_client = {
-        "id": uuid,
+    client = {
         "email": email,
+        "id": new_uuid,
         "flow": "xtls-rprx-vision"
     }
+    config["inbounds"][0]["settings"]["clients"].append(client)
+    save_config(config)
+    os.system("systemctl restart xray")
 
-    data["inbounds"][0]["settings"]["clients"].append(new_client)
-    write_json(XRAY_CONFIG_PATH, data)
+    return generate_link(email, new_uuid, config)
 
-    subprocess.run(["systemctl", "restart", "xray"])
 
-    # Получение параметров
-    ip = get_server_ip()
+def generate_link(email, uuid_str, config):
     pbk, sid = get_keys()
-    port = data["inbounds"][0]["port"]
-    protocol = data["inbounds"][0]["protocol"]
-    sni = data["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
+    ip = get_ip()
+    port = config["inbounds"][0]["port"]
+    sni = config["inbounds"][0]["streamSettings"]["realitySettings"]["serverNames"][0]
+    proto = config["inbounds"][0]["protocol"]
 
-    link = (
-        f"{protocol}://{uuid}@{ip}:{port}"
-        f"?security=reality&sni={sni}&fp={XRAY_FP}"
-        f"&pbk={pbk}&sid={sid}&spx={XRAY_SPX}&type=tcp"
-        f"&flow=xtls-rprx-vision&encryption=none#{email}"
-    )
-
+    link = f"{proto}://{uuid_str}@{ip}:{port}?security=reality&sni={sni}&fp=firefox&pbk={pbk}&sid={sid}&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#{email}"
     return link
+
+
+def list_users() -> List[dict]:
+    config = load_config()
+    return config["inbounds"][0]["settings"]["clients"]
+
+
+def delete_user(email: str) -> bool:
+    config = load_config()
+    clients = config["inbounds"][0]["settings"]["clients"]
+    new_clients = [c for c in clients if c["email"] != email]
+    if len(clients) == len(new_clients):
+        return False
+    config["inbounds"][0]["settings"]["clients"] = new_clients
+    save_config(config)
+    os.system("systemctl restart xray")
+    return True
+
+
+def export_all_links() -> List[str]:
+    config = load_config()
+    links = []
+    for c in config["inbounds"][0]["settings"]["clients"]:
+        email = c["email"]
+        uuid_str = c["id"]
+        links.append(generate_link(email, uuid_str, config))
+    return links
