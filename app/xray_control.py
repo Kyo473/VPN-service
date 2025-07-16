@@ -2,7 +2,7 @@ import uuid
 import json
 import os
 import requests
-from app.config import CONFIG_PATH,KEYS_PATH
+from config import CONFIG_PATH,KEYS_PATH
 
 def load_config():
     with open(CONFIG_PATH, "r") as f:

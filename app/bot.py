@@ -9,7 +9,7 @@ from aiogram import F
 import aiohttp
 import asyncio
 import os
-from app.config import BOT_TOKEN, API_SECRET_TOKEN, API_URL, ADMIN_IDS
+from config import BOT_TOKEN, API_SECRET_TOKEN, API_URL, ADMIN_IDS
 
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
